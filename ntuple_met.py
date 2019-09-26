@@ -1,13 +1,25 @@
 import ROOT as r, math as m #needs 6.14 or greater
 r.gROOT.SetBatch()
 
-FindZ=\
-"for(int i=0;i<genpart_size;i++){\
+FindGenZ=\
+"TVector2 v(0,0);for(int i=0;i<genpart_size;i++){\
  if(abs(genpart_pid[i])==23)\
  if(abs(genpart_pid[genpart_d1[i]])==11 || abs(genpart_pid[genpart_d1[i]])==13){\
- TVector2 v;\
- v.SetMagPhi(genpart_pt[i],genpart_phi[i]);\
- return v;} } return TVector2(0,0);"
+ v.SetMagPhi(genpart_pt[i],genpart_phi[i]);} } return TVector2(0,0);"
+
+# FindZ=\
+# "TVector2 v1(0,0),v2(0,0);if(muon_size>1)\
+# {v1.SetMagPhi(muon_pt[0],muon_phi[0]);v2.SetMagPhi(muon_pt[1],muon_phi[1]);}\
+# else if (elec_size>1)\
+# {v1.SetMagPhi(elec_pt[0],elec_phi[0]);v2.SetMagPhi(elec_pt[1],elec_phi[1]);}\
+# return v1+v2;"
+
+FindZ=\
+"TVector3 v1(0,0,0),v2(0,0,0);if(muon_size>1)\
+{v1.SetPtEtaPhi(muon_pt[0],muon_eta[0],muon_phi[0]);v2.SetPtEtaPhi(muon_pt[1],muon_eta[1],muon_phi[1]);}\
+else if (elec_size>1)\
+{v1.SetPtEtaPhi(elec_pt[0],elec_eta[0],elec_phi[0]);v2.SetPtEtaPhi(elec_pt[1],elec_eta[0],elec_phi[1]);}\
+return v1+v2;"
 
 Sum=\
 "float sum=0.0;\
@@ -22,7 +34,6 @@ if(OBJECT_pt[i]>PTCUT && fabs(OBJECT_eta[i])<ETACUT)\
 count++;} return count;"
 
 intcolor=[r.TColor.GetColor(i) for i in ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"]]
-
 def compare(name,file_list,name_list,legend_list,normalize=False,drawoption='hE',xtitle='',ytitle='',minx=0,maxx=0,rebin=1,miny=0,maxy=0,textsizefactor=1,logy=False):
   c=r.TCanvas(name,'',600,600)
   c.SetLeftMargin(0.15)#
@@ -59,7 +70,7 @@ def compare(name,file_list,name_list,legend_list,normalize=False,drawoption='hE'
         histo_list[i].SetMinimum(miny)
       else:
         histo_list[i].SetMaximum(the_maxy)
-        histo_list[i].SetMinimum(0.0001)
+        #histo_list[i].SetMinimum(0.0001)
       histo_list[i].Draw(drawoption)
       charsize=0.05*textsizefactor
       histo_list[i].GetYaxis().SetLabelSize(charsize)
@@ -84,15 +95,15 @@ def compare(name,file_list,name_list,legend_list,normalize=False,drawoption='hE'
 def dostudy(path,suffix):
 	r.ROOT.EnableImplicitMT()
 	d = r.RDataFrame("myana/mytree",path)
-	df=d.Define('z',FindZ).Define('z_pt','z.Mod()').Filter('z_pt>0.00001')\
+	df=d.Define('genz',FindGenZ).Define('genz_pt','genz.Mod()').Define('z3d',FindZ)\
+	.Define('z','TVector2 v(0,0);v.SetMagPhi(z3d.Pt(),z3d.Phi());return v;').Define('z_pt','z.Mod()')\
+	.Filter('z_pt>0.00001').Define('z_unit','z.Unit()').Define('zprojz','TVector3(0,0,z3d.Z())')\
+	.Define('zprojxy','TVector3(z3d.X(),z3d.Y(),0)').Define('z_ortho','zprojz.Cross(zprojxy).XYvector().Unit()')\
 	.Define('ht',Sum.replace("OBJECT","jet").replace("PTCUT","0.0").replace("ETACUT","5000.0"))\
 	.Define('ht_pt30_eta4',Sum.replace("OBJECT","jet").replace("PTCUT","30.0").replace("ETACUT","4.0"))\
 	.Define('ht_pt30_eta3',Sum.replace("OBJECT","jet").replace("PTCUT","30.0").replace("ETACUT","3.0"))\
-	.Define('met_v','TVector2 v(0,0);v.SetMagPhi(met_pt[0],met_phi[0]);return v;')\
-	.Define('met','met_pt[0]')\
-	.Define('met_p','met_v.Proj(z).Mod()')\
-	.Define('met_t','met_v.Norm(z).Mod()')\
-	.Define('u_p','(z+met_v).Proj(z).Mod()')\
+	.Define('met_v','TVector2 v(0,0);v.SetMagPhi(met_pt[0],met_phi[0]);return v;').Define('met','met_pt[0]')\
+	.Define('met_p','met_v*z_unit').Define('met_t','met_v*z_ortho').Define('u_p','(z+met_v)*z_unit')\
 	.Define('jet_size_pt30_eta4',Count.replace("OBJECT","jet").replace("PTCUT","30.0").replace("ETACUT","4.0"))\
 	.Define('jet_size_pt30_eta3',Count.replace("OBJECT","jet").replace("PTCUT","30.0").replace("ETACUT","3.0"))\
 
@@ -106,9 +117,9 @@ def dostudy(path,suffix):
 	var['jet_size_pt30_eta3']=(";N_{jet};Events", 15, 0, 15)
 	var['z_pt']=(";p_{T}(Z) [GeV];Events", 150, 0, 150)
 	var['met']=(";p_{T,miss} [GeV];Events", 300, 0, 300)
-	var['met_p']=(";parallel p_{T,miss} [GeV];Events", 150, 0, 150)
-	var['met_t']=(";transverse p_{T,miss} [GeV];Events", 150, 0, 150)
-	var['u_p']=(";u_{p} [GeV];Events", 150, 0, 150)
+	var['met_p']=(";parallel p_{T,miss} [GeV];Events", 300, -150, 150)
+	var['met_t']=(";transverse p_{T,miss} [GeV];Events", 300, -150, 150)
+	var['u_p']=(";u_{p} [GeV];Events", 300, -150, 150)
 
 	twod_vars=['ht','ht_pt30_eta4','ht_pt30_eta3','vtx_size','jet_size','jet_size_pt30_eta4','jet_size_pt30_eta3','z_pt']
 
@@ -145,20 +156,13 @@ dostudy("/eos/user/w/wenyu/TDRFullsim_ntuple/DYToMuMuorEleEle_M-20_14TeV_pythia8
 dostudy("/afs/cern.ch/user/e/eusai/DelphesNtuplizer/*.root","delphes")
 
 f={}
-for i in ['fullsim','delphes']:
-	f[i]=r.TFile('outfile_met_'+i+'.root','READ')
+for i in ['fullsim','delphes']:	f[i]=r.TFile('outfile_met_'+i+'.root','READ')
 hnames=[[key.GetName(),key.GetClassName()] for key in f["fullsim"].GetListOfKeys()]
 
 for i in hnames:
-	compare(
-		name=i[0]+'_comp',
+	compare(name=i[0]+'_comp',textsizefactor=0.7,
 		normalize= (not (i[1]=='TProfile')) and ('rms' not in i[0]),
-		file_list=[f['fullsim'],f['delphes']],
-		name_list=[i[0]]*2,
-		legend_list=['Full Sim','Delphes'],
-		drawoption= 'hist' if 'over' in i[0] or 'rms' in i[0] else '',
-		textsizefactor=0.7)
+		file_list=[f['fullsim'],f['delphes']],legend_list=['Full Sim','Delphes'],name_list=[i[0]]*2,
+		drawoption= 'hist' if 'over' in i[0] or 'rms' in i[0] else '')
 
-for i in f:
-	f[i].Close()
-
+for i in f:	f[i].Close()
