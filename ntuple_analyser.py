@@ -254,7 +254,25 @@ def main():
                 ["looseISOifRecoLooseID",0,0,2,"#varepsilon(looseISO given looseID)"], 
                 ["tightISOifRecoLooseID",0,14,2,"#varepsilon(tightISO given looseID)"] ## ISOs on reco+id-matched gen (eff only)
                 ], 
-            }                
+            } 
+
+    elif obj=="metpf" or obj=="metpuppi":
+        params = {
+            "dR": 0.2,
+            "ptRatio": 2.0,
+            "ptMin": 20,
+            "etaSlices": [[0, 1.3], [1.3, 2.5], [2.5, 3], [3, 1e5] ], ## use 1e5 as "Inf"
+            "ptSlices": [[20, 50], [50, 100], [100, 200], [200, 400], [400, 1e5] ],
+            "sliceSplit": 1, # for 2D map, make N divisions of each slice
+            "plotPtRange": [0, 1500],
+            "plotEtaRange": [-5, 5],
+            "plotPhiRange": [-5, 5],
+            "plotMassRange": [0, 500],
+            "plotNObjRange_Delp": [0, 20],
+            "plotNObjRange_Full": [0, 50],
+            "ids": [],  ## ["nameforplot", numerator idpass threshold, numerator isopass threshold, denominator: 0(all)/1(reco matched)/2(reco+id), "efficiency title"]
+                        ## NOTE: only efficiency plots get anything with value [3] > 0
+            }               
     else: 
         print 'Physics object not recognized! Choose jet, photon, electron, or muon.'            
         exit()
@@ -367,8 +385,14 @@ def main():
         elif obj == "muon":
             recoobjs = event.muons()
             genobjs = event.genparticles()
+        elif obj == "metpf":
+            recoobjs = event.metpuppi()
+            genobjs = event.genmet()
+        elif obj == "metpuppi":
+            recoobjs = event.metpf()
+            genobjs = event.genmet()
         else: 
-            print 'Physics object not recognized! Choose jet, photon, electron, or muon.'            
+            print 'Physics object not recognized! Choose jet, photon, electron, metpf, metpuppi, or muon.'            
 
         ## Initialize multiplicity counters
         multiplicity = {}
