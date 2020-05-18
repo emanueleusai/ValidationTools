@@ -183,6 +183,18 @@ class Event(object):
         """Returns lumisection number."""
         return self._tree.lumi
 
+    def vtxSize(self):
+        """Returns lumisection number."""
+        return self._tree.vtx_size
+
+    def npuVertices(self):
+        """Returns lumisection number."""
+        return self._tree.npuVertices
+
+    def trueInteractions(self):
+        """Returns lumisection number."""
+        return self._tree.trueInteractions
+
     def run(self):
         """Returns run number."""
         return self._tree.run

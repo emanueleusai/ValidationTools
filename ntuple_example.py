@@ -1,15 +1,16 @@
 #!/usr/bin/env python
-# import ROOT
+import ROOT
 #from __future__ import print_function
 from bin.NtupleDataFormat import Ntuple
 import sys
 
+ROOT.gROOT.SetBatch(1)
 
 # The purpose of this file is to demonstrate mainly the objects
 # that are in the HGCalNtuple
 
 def main():
-    inFile = sys.argv[1]
+    inFile = "/eos/cms/store/group/upgrade/RTB/FullsimFlat_110X/DYToLL_M-50_14TeV_HLTTDRWinter20_200PU.root" #sys.argv[1]
     ntuple = Ntuple(inFile)
 
     maxEvents = 10
@@ -35,37 +36,42 @@ def main():
 
         ###### loop over gen particles ######
 
-        print ''
-        print '  -- gen parts --'
-        print ''
+        # print ''
+        # print '  -- gen parts --'
+        # print ''
         
-        genparts = event.genparticles()
-        i=0
-        for p in genparts:
+        # genparts = event.genparticles()
+        # i=0
+        # for p in genparts:
         
-            eta = p.eta()
+        #     eta = p.eta()
 
-            etap = eta
-            if eta > 10:
-               etap = 999.
-            if eta < -10:
-               etap = -999.
+        #     etap = eta
+        #     if eta > 10:
+        #        etap = 999.
+        #     if eta < -10:
+        #        etap = -999.
 
-            print 'N: {:<5}, St: {:<5}, PID: {:<5}, PT: {:<5.2f}, Eta: {:<5.2f}, Phi: {:<5.2f}, M: {:<5.2f},  M1: {:<5}, M2: {:<5}, D1: {:<5}, D2: {:<5}'.format(i, p.status(), p.pid(), p.pt(), etap, p.phi(), p.mass(), p.m1(), p.m2(), p.d1(), p.d2())
-            i+=1
-
-
-        print ''
-        print '  -- muons  --'
-        print ''
-
-        muons = event.muons()
-        i=0
-        for p in muons:
+        #     print 'N: {:<5}, St: {:<5}, PID: {:<5}, PT: {:<5.2f}, Eta: {:<5.2f}, Phi: {:<5.2f}, M: {:<5.2f},  M1: {:<5}, M2: {:<5}, D1: {:<5}, D2: {:<5}'.format(i, p.status(), p.pid(), p.pt(), etap, p.phi(), p.mass(), p.m1(), p.m2(), p.d1(), p.d2())
+        #     i+=1
 
 
-            print 'N: {:<5}, PT: {:<5.2f}, Eta: {:<5.2f}, Phi: {:<5.2f}, M: {:<5.2f},  Charge: {:<5}, IdVar: {:<5.2f}, IsoVar: {:<5.2f}, IdPass: {:08b}, IsoPass: {:08b}'.format(i, p.pt(), p.eta() , p.phi(), p.mass(), p.charge(), p.idvar(), p.reliso(), p.idpass(), p.isopass() )
+        # print ''
+        # print '  -- muons  --'
+        # print ''
 
+        # muons = event.muons()
+        # i=0
+        # for p in muons:
+
+
+        #     print 'N: {:<5}, PT: {:<5.2f}, Eta: {:<5.2f}, Phi: {:<5.2f}, M: {:<5.2f},  Charge: {:<5}, IdVar: {:<5.2f}, IsoVar: {:<5.2f}, IdPass: {:08b}, IsoPass: {:08b}'.format(i, p.pt(), p.eta() , p.phi(), p.mass(), p.charge(), p.idvar(), p.reliso(), p.idpass(), p.isopass() )
+
+        print 'vtxsize:',event.vtxSize()
+
+        print 'npuVertices:',event.npuVertices()
+
+        print 'trueInteractions:',event.trueInteractions()
 
         tot_nevents += 1
         tot_genpart += len(event.genparticles())
@@ -73,9 +79,9 @@ def main():
         tot_electron += len(event.electrons()) 
         tot_gamma += len(event.gammas())   
         tot_muon += len(event.muons())   
-        tot_jet += len(event.jets())   
+        tot_jet += len(event.jetspuppi())   
         tot_tau += len(event.taus())   
-        tot_met += len(event.mets())   
+        tot_met += len(event.metspuppi())   
 
 
 
